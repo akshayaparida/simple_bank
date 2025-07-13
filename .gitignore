@@ -1,0 +1,6 @@
+# Ignore DB volumes and temp files
+pgdata/
+*.env
+*.log
+.vscode/
+.idea/
