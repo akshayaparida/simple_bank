@@ -73,7 +73,11 @@ migrateversion:
 migrateforce:
 	migrate -path db/migration -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" force $(VERSION)
 
-.PHONY: all build run test clean postgres createdb dropdb stop-postgres migrateup migratedown migrateup1 migratedown1 migrateversion migrateforce
+# Generate Go code from SQL queries using sqlc
+sqlc:
+	sqlc generate
+
+.PHONY: all build run test clean postgres createdb dropdb stop-postgres migrateup migratedown migrateup1 migratedown1 migrateversion migrateforce sqlc
 
 
 
