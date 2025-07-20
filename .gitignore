@@ -2,5 +2,10 @@
 pgdata/
 *.env
 *.log
+
+# IDE configurations
 .vscode/
 .idea/
+.cursor/
+.cursorrules
+*.cursorrules
