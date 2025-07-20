@@ -7,5 +7,5 @@ pgdata/
 .vscode/
 .idea/
 .cursor/
-.cursorrules
+.cursor/rules
 *.cursorrules
