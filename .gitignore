@@ -6,6 +6,7 @@ pgdata/
 # IDE configurations
 .vscode/
 .idea/
+.cursor
 .cursor/
 .cursor/rules
 *.cursorrules
