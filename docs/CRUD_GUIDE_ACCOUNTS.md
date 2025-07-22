@@ -301,4 +301,139 @@ git commit -m "feat: add full CRUD for entries table and generate sqlc code"
 ---
 
 
+---
+
+# Guide: Implementing Full CRUD for Transfers Table with sqlc
+
+## 1. Write SQL Queries for CRUD (transfers)
+
+Create or edit `db/query/transfer.sql` and add the following queries:
+
+```sql
+-- name: CreateTransfer :one
+INSERT INTO transfers (
+  from_account_id,
+  to_account_id,
+  amount,
+  status,
+  reason
+) VALUES (
+  $1, $2, $3, $4, $5
+) RETURNING *;
+
+-- name: GetTransfer :one
+SELECT * FROM transfers WHERE id = $1 LIMIT 1;
+
+-- name: ListTransfers :many
+SELECT * FROM transfers
+ORDER BY id
+LIMIT $1
+OFFSET $2;
+
+-- name: UpdateTransfer :one
+UPDATE transfers
+SET status = $2, reason = $3
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteTransfer :exec
+DELETE FROM transfers WHERE id = $1;
+```
+
+### Line-by-Line Explanation
+
+#### CreateTransfer
+- `-- name: CreateTransfer :one` — Tells sqlc to generate a Go method named `CreateTransfer` that returns a single row.
+- `INSERT INTO transfers (...) VALUES (...)` — Adds a new transfer with the given from_account_id, to_account_id, amount, status, and reason.
+- `from_account_id, to_account_id, amount, status, reason` — Specifies the columns to insert values for. These represent the source and destination accounts, the amount, the transfer status, and an optional reason.
+- `VALUES ($1, $2, $3, $4, $5)` — Uses parameters for safe, dynamic input from Go code.
+- `RETURNING *;` — Returns the full new row, including auto-generated fields like id and created_at.
+
+#### GetTransfer
+- `-- name: GetTransfer :one` — Tells sqlc to generate a Go method named `GetTransfer` that returns a single row.
+- `SELECT * FROM transfers WHERE id = $1 LIMIT 1;` — Fetches the transfer with the given id. LIMIT 1 ensures only one row is returned.
+
+#### ListTransfers
+- `-- name: ListTransfers :many` — Tells sqlc to generate a Go method named `ListTransfers` that returns multiple rows.
+- `SELECT * FROM transfers` — Fetches all columns from the transfers table.
+- `ORDER BY id` — Sorts the results by id for consistency.
+- `LIMIT $1 OFFSET $2` — Supports pagination: LIMIT is the max number of rows, OFFSET is how many to skip.
+
+#### UpdateTransfer
+- `-- name: UpdateTransfer :one` — Tells sqlc to generate a Go method named `UpdateTransfer` that returns a single row.
+- `UPDATE transfers SET status = $2, reason = $3 WHERE id = $1` — Updates the status and reason for the transfer with the given id.
+- `RETURNING *;` — Returns the updated row.
+
+#### DeleteTransfer
+- `-- name: DeleteTransfer :exec` — Tells sqlc to generate a Go method named `DeleteTransfer` that just executes (no rows returned).
+- `DELETE FROM transfers WHERE id = $1;` — Deletes the transfer with the given id.
+
+**Why:**
+- Named queries let sqlc generate Go methods for you.
+- Placeholders (`$1`, `$2`, etc.) keep your queries safe from SQL injection.
+- Pagination is best practice for listing many records.
+- `status` and `reason` are included in updates for flexibility (e.g., marking as completed, failed, or adding a reason).
+
+---
+
+## 2. Generate Go Code with sqlc (transfers)
+
+Run:
+```sh
+make sqlc
+# or
+sqlc generate
+```
+This will generate new Go methods for all your transfers queries in the `db/sqlc/` directory.
+
+---
+
+## 3. Use the Generated Go Code (transfers)
+
+Example usage in Go:
+
+```go
+// Create a transfer
+params := db.CreateTransferParams{
+    FromAccountID: 1,
+    ToAccountID:   2,
+    Amount:        1000,
+    Status:        db.TransferStatusPending,
+    Reason:        "Payment for invoice #123",
+}
+transfer, err := queries.CreateTransfer(ctx, params)
+
+// Get a transfer
+transfer, err := queries.GetTransfer(ctx, transferID)
+
+// List transfers
+transfers, err := queries.ListTransfers(ctx, db.ListTransfersParams{Limit: 10, Offset: 0})
+
+// Update a transfer
+updated, err := queries.UpdateTransfer(ctx, db.UpdateTransferParams{ID: transferID, Status: db.TransferStatusCompleted, Reason: "Completed by admin"})
+
+// Delete a transfer
+err := queries.DeleteTransfer(ctx, transferID)
+```
+
+**Notes:**
+- The process is almost identical to accounts and entries, but the fields and business logic may differ (e.g., two account IDs, status, and reason).
+- Always check for errors and handle them appropriately in your application.
+- You can extend the queries for more advanced filtering (e.g., by account, status, or date).
+
+---
+
+## 4. Test and Commit
+
+Test your new methods, then commit your changes:
+```sh
+git add .
+git commit -m "feat: add full CRUD for transfers table and generate sqlc code"
+```
+
+---
+
+
+
+
 
